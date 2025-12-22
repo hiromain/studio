@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -7,7 +8,6 @@ import { RecipeCard } from '@/components/recipe-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ShoppingCart, Search } from 'lucide-react';
 import type { Recipe } from '@/lib/types';
@@ -61,33 +61,30 @@ export default function HomePage() {
         </p>
       </div>
 
-      <div className="mb-8 p-6 bg-card rounded-lg shadow-md">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-          <div className="relative md:col-span-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Rechercher par nom ou ingrédient..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="pl-10 w-full"
-            />
-          </div>
-          <div>
-            <Label htmlFor="category-filter" className="text-sm font-medium">Filtrer par catégorie</Label>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger id="category-filter" className="w-full">
-                <SelectValue placeholder="Catégorie" />
+      <div className="mb-8 flex flex-col sm:flex-row items-center gap-4 p-4 bg-card rounded-lg shadow-sm border">
+        <div className="relative flex-grow w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Rechercher une recette..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="pl-10 w-full !h-12 text-base"
+          />
+        </div>
+        <div className="w-full sm:w-64">
+           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full !h-12 text-base">
+                <SelectValue placeholder="Toutes les catégories" />
               </SelectTrigger>
               <SelectContent>
                 {categories.map(cat => (
-                  <SelectItem key={cat} value={cat}>
+                  <SelectItem key={cat} value={cat} className="text-base">
                     {cat === 'all' ? 'Toutes les catégories' : cat}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
         </div>
       </div>
       
