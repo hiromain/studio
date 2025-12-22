@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "spaghetti-bolognese",
+      "description": "A classic Spaghetti Bolognese.",
+      "imageUrl": "https://images.unsplash.com/photo-1653122025256-d1ac2880c511?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c3BhZ2hldHRpJTIwYm9sb2duZXNlfGVufDB8fHx8MTc2NjQyODAxNXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "spaghetti bolognese"
+    },
+    {
+      "id": "chocolate-fondant",
+      "description": "A rich and decadent chocolate fondant.",
+      "imageUrl": "https://images.unsplash.com/photo-1586985290301-8db40143d525?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjaG9jb2xhdGUlMjBmb25kYW50fGVufDB8fHx8MTc2NjQzNzY5NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "chocolate fondant"
+    },
+    {
+      "id": "pumpkin-soup",
+      "description": "A creamy pumpkin soup.",
+      "imageUrl": "https://images.unsplash.com/photo-1573630490626-24859ba0f58a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwdW1wa2luJTIwc291cHxlbnwwfHx8fDE3NjY0Mzc2OTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "pumpkin soup"
+    },
+    {
+      "id": "caesar-salad",
+      "description": "A fresh Caesar salad.",
+      "imageUrl": "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxjYWVzYXIlMjBzYWxhZHxlbnwwfHx8fDE3NjYzODQxNjB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "caesar salad"
+    },
+    {
+      "id": "beef-bourguignon",
+      "description": "A hearty Beef Bourguignon stew.",
+      "imageUrl": "https://images.unsplash.com/photo-1701913364117-c806e46550af?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxiZWVmJTIwYm91cmd1aWdub258ZW58MHx8fHwxNzY2NDM3Njk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "beef bourguignon"
+    },
+    {
+      "id": "apple-pie",
+      "description": "A homemade apple pie.",
+      "imageUrl": "https://images.unsplash.com/photo-1628815871005-a860e5905628?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YXBwbGUlMjBwaWV8ZW58MHx8fHwxNzY2NDMyOTQwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "apple pie"
+    },
+    {
+      "id": "mojito",
+      "description": "A refreshing Mojito cocktail.",
+      "imageUrl": "https://images.unsplash.com/photo-1674716538651-3c45ebb05d82?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtb2ppdG8lMjBjb2NrdGFpbHxlbnwwfHx8fDE3NjYzNjg1ODl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mojito cocktail"
+    },
+    {
+      "id": "vegetarian-quiche",
+      "description": "A savory vegetarian quiche.",
+      "imageUrl": "https://images.unsplash.com/photo-1737210235283-7675f83efc59?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx2ZWdldGFyaWFuJTIwcXVpY2hlfGVufDB8fHx8MTc2NjQzNzY5NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "vegetarian quiche"
+    }
+  ]
 }
