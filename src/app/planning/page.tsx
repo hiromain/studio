@@ -3,34 +3,46 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { addDays, format, startOfWeek, eachDayOfInterval } from 'date-fns';
+import { addDays, format, startOfWeek, eachDayOfInterval, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { usePlanning } from '@/context/planning-context';
 import { useRecipes } from '@/context/recipe-context';
 import type { MealSlot, MealType, PlannedMeal, PlannedEvent } from '@/lib/types';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MEAL_TYPES } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X, PlusCircle, ChevronLeft, ChevronRight, PartyPopper, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { X, PlusCircle, ChevronLeft, ChevronRight, CalendarDays, PartyPopper, Trash2, Pencil } from 'lucide-react';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useRouter } from 'next/navigation';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 export default function PlanningPage() {
+  return (
+    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+       <Tabs defaultValue="calendar" className="w-full">
+        <div className="flex justify-center mb-8">
+            <TabsList className="grid grid-cols-2 w-full max-w-md">
+                <TabsTrigger value="calendar"><CalendarDays className="mr-2 h-4 w-4"/>Calendrier</TabsTrigger>
+                <TabsTrigger value="events"><PartyPopper className="mr-2 h-4 w-4"/>Événements</TabsTrigger>
+            </TabsList>
+        </div>
+        <TabsContent value="calendar">
+            <CalendarView />
+        </TabsContent>
+        <TabsContent value="events">
+            <EventsView />
+        </TabsContent>
+        </Tabs>
+    </div>
+  );
+}
+
+function CalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'week' | 'day'>('week');
   
@@ -52,7 +64,7 @@ export default function PlanningPage() {
   const daysToShow = view === 'week' ? weekDays : [currentDate];
 
   return (
-    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <>
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={goToToday}>Aujourd'hui</Button>
@@ -75,14 +87,14 @@ export default function PlanningPage() {
           <DayColumn key={day.toString()} date={day} />
         ))}
       </div>
-    </div>
+    </>
   );
 }
 
+
 function DayColumn({ date }: { date: Date }) {
-    const { getPlanForDate, getEventsForDate } = usePlanning();
+    const { getPlanForDate } = usePlanning();
     const plans = getPlanForDate(date);
-    const events = getEventsForDate(date);
     const midiPlan = plans.find(p => p.meal === 'Midi');
     const soirPlan = plans.find(p => p.meal === 'Soir');
 
@@ -92,7 +104,6 @@ function DayColumn({ date }: { date: Date }) {
                 <CardTitle className="font-headline text-xl capitalize">
                     {format(date, 'eeee d', { locale: fr })}
                 </CardTitle>
-                <EventSection date={date} events={events} />
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-4">
                 <MealSection date={date} meal="Midi" plan={midiPlan} />
@@ -102,37 +113,7 @@ function DayColumn({ date }: { date: Date }) {
     );
 }
 
-function EventSection({ date, events }: { date: Date, events: PlannedEvent[] }) {
-  const { removeEventFromPlan } = usePlanning();
-
-  return (
-    <div className="min-h-[48px] pt-2">
-      <div className="flex flex-wrap justify-center items-center gap-2">
-      {events.map(event => (
-        <Badge key={event.id} variant="secondary" className="group pl-2 pr-1 py-1 text-sm">
-          <PartyPopper className="h-4 w-4 mr-1.5" />
-          {event.name}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-5 w-5 ml-1 opacity-50 group-hover:opacity-100" 
-            onClick={() => removeEventFromPlan(event.id)}>
-              <X className="h-3 w-3" />
-          </Button>
-        </Badge>
-      ))}
-      <AddEventDialog date={date}>
-        <Button variant="ghost" size="icon" className="h-7 w-7">
-          <PlusCircle className="h-4 w-4" />
-        </Button>
-      </AddEventDialog>
-      </div>
-    </div>
-  );
-}
-
-
-function MealSection({ date, meal, plan }: { date: Date; meal: MealSlot; plan?: PlannedMeal }) {
+function MealSection({ date, meal, plan, eventId }: { date: Date; meal: MealSlot; plan?: PlannedMeal, eventId?: string }) {
   const { getRecipeById } = useRecipes();
   const { removeRecipeFromPlan } = usePlanning();
 
@@ -152,7 +133,7 @@ function MealSection({ date, meal, plan }: { date: Date; meal: MealSlot; plan?: 
                   <span className="font-medium">{recipe.title}</span>
                   <span className="text-muted-foreground ml-2">({mealType})</span>
                 </Link>
-                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeRecipeFromPlan(date, meal, recipeId, mealType)}>
+                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeRecipeFromPlan(date, meal, recipeId, mealType, eventId)}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -162,7 +143,7 @@ function MealSection({ date, meal, plan }: { date: Date; meal: MealSlot; plan?: 
           <p className="text-sm text-muted-foreground text-center py-2">Aucun plat planifié.</p>
         )}
       </div>
-      <AddRecipeDialog date={date} meal={meal}>
+      <AddRecipeDialog date={date} meal={meal} eventId={eventId}>
         <Button variant="ghost" className="w-full mt-2">
           <PlusCircle className="mr-2 h-4 w-4" />
           Ajouter
@@ -172,8 +153,7 @@ function MealSection({ date, meal, plan }: { date: Date; meal: MealSlot; plan?: 
   );
 }
 
-
-function AddRecipeDialog({ date, meal, children }: { date: Date; meal: MealSlot, children: React.ReactNode }) {
+function AddRecipeDialog({ date, meal, children, eventId }: { date: Date; meal: MealSlot, children: React.ReactNode, eventId?: string }) {
     const { recipes } = useRecipes();
     const { addRecipeToPlan } = usePlanning();
     const [selectedRecipe, setSelectedRecipe] = useState<string | undefined>();
@@ -182,7 +162,7 @@ function AddRecipeDialog({ date, meal, children }: { date: Date; meal: MealSlot,
 
     const handleAdd = () => {
         if (selectedRecipe && selectedMealType) {
-            addRecipeToPlan(date, meal, selectedRecipe, selectedMealType);
+            addRecipeToPlan(date, meal, selectedRecipe, selectedMealType, eventId);
             setSelectedRecipe(undefined);
             setSelectedMealType(undefined);
             setIsOpen(false);
@@ -198,7 +178,7 @@ function AddRecipeDialog({ date, meal, children }: { date: Date; meal: MealSlot,
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div>
-                        <label className="text-sm font-medium">Recette</label>
+                        <Label>Recette</Label>
                         <Select onValueChange={setSelectedRecipe} value={selectedRecipe}>
                             <SelectTrigger><SelectValue placeholder="Choisir une recette" /></SelectTrigger>
                             <SelectContent>
@@ -209,7 +189,7 @@ function AddRecipeDialog({ date, meal, children }: { date: Date; meal: MealSlot,
                         </Select>
                     </div>
                     <div>
-                        <label className="text-sm font-medium">Type de plat</label>
+                        <Label>Type de plat</Label>
                         <Select onValueChange={(v) => setSelectedMealType(v as MealType)} value={selectedMealType}>
                              <SelectTrigger><SelectValue placeholder="Choisir le type de plat" /></SelectTrigger>
                             <SelectContent>
@@ -226,16 +206,95 @@ function AddRecipeDialog({ date, meal, children }: { date: Date; meal: MealSlot,
     );
 }
 
-function AddEventDialog({ date, children }: { date: Date; children: React.ReactNode }) {
-  const { addEventToPlan } = usePlanning();
-  const [eventName, setEventName] = useState("");
+// ---- Event Components ----
+
+function EventsView() {
+    const { plannedEvents, removeEvent } = usePlanning();
+    const router = useRouter();
+
+    const handleCreateEvent = (newEvent: PlannedEvent) => {
+        router.push(`/planning/events/${newEvent.id}`);
+    }
+    
+    return (
+        <div className="space-y-8">
+            <div className="text-center">
+                <h2 className="text-3xl font-bold font-headline">Vos Événements</h2>
+                <p className="text-muted-foreground mt-2">Planifiez vos repas pour des occasions spéciales.</p>
+            </div>
+
+            <div className="flex justify-center">
+                <AddEventDialog onEventCreated={handleCreateEvent}>
+                    <Button size="lg">
+                        <PlusCircle className="mr-2 h-5 w-5" />
+                        Créer un événement
+                    </Button>
+                </AddEventDialog>
+            </div>
+
+            {plannedEvents.length > 0 ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {plannedEvents.map(event => (
+                        <Card key={event.id} className="flex flex-col">
+                            <CardHeader>
+                                <CardTitle className="font-headline flex justify-between items-start">
+                                    {event.name}
+                                    <div className="flex gap-1">
+                                        <AddEventDialog existingEvent={event}>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                        </AddEventDialog>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeEvent(event.id)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </CardTitle>
+                                <CardDescription>
+                                    {event.duration} jour{event.duration > 1 ? 's' : ''} à partir du {format(parseISO(event.startDate), 'd MMMM yyyy', { locale: fr })}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex-1 flex flex-col justify-end">
+                                <Button asChild className="w-full">
+                                    <Link href={`/planning/events/${event.id}`}>Planifier les repas</Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))}
+                 </div>
+            ) : (
+                <div className="text-center py-16 border-dashed border-2 rounded-lg">
+                    <PartyPopper className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-4 text-lg font-medium">Aucun événement planifié</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">Créez votre premier événement pour commencer.</p>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function AddEventDialog({ children, onEventCreated, existingEvent }: { children: React.ReactNode, onEventCreated?: (event: PlannedEvent) => void, existingEvent?: PlannedEvent }) {
+  const { addEvent, updateEvent } = usePlanning();
+  const [name, setName] = useState(existingEvent?.name ?? "");
+  const [startDate, setStartDate] = useState<Date | undefined>(existingEvent ? parseISO(existingEvent.startDate) : new Date());
+  const [duration, setDuration] = useState(existingEvent?.duration ?? 1);
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleAdd = () => {
-    if (eventName.trim()) {
-      addEventToPlan(date, eventName.trim());
-      setEventName("");
+  const handleSave = () => {
+    if (name.trim() && startDate && duration > 0) {
+      if (existingEvent) {
+          updateEvent({ id: existingEvent.id, name: name.trim(), startDate: format(startDate, 'yyyy-MM-dd'), duration });
+      } else {
+          const newEvent = addEvent(name.trim(), startDate, duration);
+          onEventCreated?.(newEvent);
+      }
       setIsOpen(false);
+      // Reset form for next time if it was a new event
+      if(!existingEvent) {
+          setName("");
+          setStartDate(new Date());
+          setDuration(1);
+      }
     }
   };
 
@@ -244,19 +303,42 @@ function AddEventDialog({ date, children }: { date: Date; children: React.ReactN
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Ajouter un événement</DialogTitle>
+          <DialogTitle>{existingEvent ? "Modifier l'événement" : "Créer un événement"}</DialogTitle>
         </DialogHeader>
-        <div className="py-4">
-          <Input 
-            placeholder="Ex: Anniversaire de Jean" 
-            value={eventName} 
-            onChange={(e) => setEventName(e.target.value)} 
-          />
+        <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">Nom</Label>
+                <Input id="name" value={name} onChange={e => setName(e.target.value)} className="col-span-3" placeholder="Ex: Week-end à la mer"/>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right">Début</Label>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="col-span-3 font-normal justify-start">
+                           <CalendarDays className="mr-2 h-4 w-4"/>
+                           {startDate ? format(startDate, 'd MMMM yyyy', { locale: fr}) : "Choisir une date"}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                    </PopoverContent>
+                </Popover>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="duration" className="text-right">Durée (jours)</Label>
+                <Input id="duration" type="number" value={duration} onChange={e => setDuration(Math.max(1, parseInt(e.target.value, 10) || 1))} className="col-span-3"/>
+            </div>
         </div>
         <DialogFooter>
-          <Button onClick={handleAdd} disabled={!eventName.trim()}>Ajouter l'événement</Button>
+          <Button onClick={handleSave} disabled={!name.trim() || !startDate || duration <= 0}>{existingEvent ? "Enregistrer" : "Créer et planifier"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
+// Remove old Event section
+// DayColumn, EventSection, AddEventDialog are not used in the new event-centric view.
+// They are kept for the calendar view but the event part is removed from DayColumn.
+// Let's remove old AddEventDialog and EventSection
+// The new AddEventDialog is inside EventsView component

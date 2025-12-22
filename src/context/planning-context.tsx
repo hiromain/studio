@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, ReactNode, useMemo, useEffe
 import type { PlannedMeal, MealSlot, MealType, PlannedEvent } from '@/lib/types';
 import { format } from 'date-fns';
 
-const LOCAL_STORAGE_KEY = 'mon_planning_v2';
+const LOCAL_STORAGE_KEY = 'mon_planning_v3';
 
 interface PlanningDataType {
   meals: PlannedMeal[];
@@ -15,12 +15,14 @@ interface PlanningDataType {
 interface PlanningContextType {
   plannedMeals: PlannedMeal[];
   plannedEvents: PlannedEvent[];
-  addRecipeToPlan: (date: Date, meal: MealSlot, recipeId: string, mealType: MealType) => void;
-  removeRecipeFromPlan: (date: Date, meal: MealSlot, recipeId: string, mealType: MealType) => void;
-  getPlanForDate: (date: Date) => PlannedMeal[];
-  addEventToPlan: (date: Date, name: string) => void;
-  removeEventFromPlan: (eventId: string) => void;
-  getEventsForDate: (date: Date) => PlannedEvent[];
+  addRecipeToPlan: (date: Date, meal: MealSlot, recipeId: string, mealType: MealType, eventId?: string) => void;
+  removeRecipeFromPlan: (date: Date, meal: MealSlot, recipeId: string, mealType: MealType, eventId?: string) => void;
+  getPlanForDate: (date: Date, eventId?: string) => PlannedMeal[];
+  addEvent: (name: string, startDate: Date, duration: number) => PlannedEvent;
+  updateEvent: (event: PlannedEvent) => void;
+  removeEvent: (eventId: string) => void;
+  getEventById: (eventId: string) => PlannedEvent | undefined;
+  getMealsForEvent: (eventId: string) => PlannedMeal[];
   isLoading: boolean;
 }
 
@@ -53,12 +55,12 @@ export const PlanningProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [planningData, isLoading]);
 
-  const addRecipeToPlan = useCallback((date: Date, mealSlot: MealSlot, recipeId: string, mealType: MealType) => {
+  const addRecipeToPlan = useCallback((date: Date, mealSlot: MealSlot, recipeId: string, mealType: MealType, eventId?: string) => {
     const dateString = format(date, 'yyyy-MM-dd');
     
     setPlanningData(prev => {
         const newMeals = [...prev.meals];
-        let mealPlan = newMeals.find(p => p.date === dateString && p.meal === mealSlot);
+        let mealPlan = newMeals.find(p => p.date === dateString && p.meal === mealSlot && p.eventId === eventId);
 
         if (mealPlan) {
             const recipeExists = mealPlan.recipes.some(r => r.recipeId === recipeId && r.mealType === mealType);
@@ -70,17 +72,18 @@ export const PlanningProvider = ({ children }: { children: ReactNode }) => {
                 date: dateString,
                 meal: mealSlot,
                 recipes: [{ recipeId, mealType }],
+                eventId,
             });
         }
         return { ...prev, meals: newMeals };
     });
   }, []);
 
-  const removeRecipeFromPlan = useCallback((date: Date, mealSlot: MealSlot, recipeId: string, mealType: MealType) => {
+  const removeRecipeFromPlan = useCallback((date: Date, mealSlot: MealSlot, recipeId: string, mealType: MealType, eventId?: string) => {
     const dateString = format(date, 'yyyy-MM-dd');
     setPlanningData(prev => {
         const newMeals = prev.meals.map(plan => {
-            if (plan.date === dateString && plan.meal === mealSlot) {
+            if (plan.date === dateString && plan.meal === mealSlot && plan.eventId === eventId) {
                 return {
                     ...plan,
                     recipes: plan.recipes.filter(r => !(r.recipeId === recipeId && r.mealType === mealType))
@@ -92,30 +95,44 @@ export const PlanningProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const getPlanForDate = useCallback((date: Date) => {
+  const getPlanForDate = useCallback((date: Date, eventId?: string) => {
     const dateString = format(date, 'yyyy-MM-dd');
-    return planningData.meals.filter(p => p.date === dateString);
+    return planningData.meals.filter(p => p.date === dateString && p.eventId === eventId);
   }, [planningData.meals]);
 
-  const addEventToPlan = useCallback((date: Date, name: string) => {
-    const dateString = format(date, 'yyyy-MM-dd');
+  const addEvent = useCallback((name: string, startDate: Date, duration: number) => {
     const newEvent: PlannedEvent = {
       id: `event-${Date.now()}`,
-      date: dateString,
       name,
+      startDate: format(startDate, 'yyyy-MM-dd'),
+      duration,
     };
     setPlanningData(prev => ({ ...prev, events: [...prev.events, newEvent] }));
+    return newEvent;
   }, []);
 
-  const removeEventFromPlan = useCallback((eventId: string) => {
-    setPlanningData(prev => ({ ...prev, events: prev.events.filter(e => e.id !== eventId)}));
+  const updateEvent = useCallback((updatedEvent: PlannedEvent) => {
+    setPlanningData(prev => ({
+        ...prev,
+        events: prev.events.map(e => e.id === updatedEvent.id ? updatedEvent : e)
+    }));
   }, []);
 
-  const getEventsForDate = useCallback((date: Date) => {
-    const dateString = format(date, 'yyyy-MM-dd');
-    return planningData.events.filter(e => e.date === dateString);
+  const removeEvent = useCallback((eventId: string) => {
+    setPlanningData(prev => ({
+      ...prev,
+      events: prev.events.filter(e => e.id !== eventId),
+      meals: prev.meals.filter(m => m.eventId !== eventId) // Also remove meals associated with the event
+    }));
+  }, []);
+  
+  const getEventById = useCallback((eventId: string) => {
+      return planningData.events.find(e => e.id === eventId);
   }, [planningData.events]);
 
+  const getMealsForEvent = useCallback((eventId: string) => {
+      return planningData.meals.filter(m => m.eventId === eventId);
+  }, [planningData.meals]);
 
   const value = useMemo(() => ({
     plannedMeals: planningData.meals,
@@ -123,11 +140,13 @@ export const PlanningProvider = ({ children }: { children: ReactNode }) => {
     addRecipeToPlan,
     removeRecipeFromPlan,
     getPlanForDate,
-    addEventToPlan,
-    removeEventFromPlan,
-    getEventsForDate,
+    addEvent,
+    updateEvent,
+    removeEvent,
+    getEventById,
+    getMealsForEvent,
     isLoading
-  }), [planningData, addRecipeToPlan, removeRecipeFromPlan, getPlanForDate, addEventToPlan, removeEventFromPlan, getEventsForDate, isLoading]);
+  }), [planningData, addRecipeToPlan, removeRecipeFromPlan, getPlanForDate, addEvent, updateEvent, removeEvent, getEventById, getMealsForEvent, isLoading]);
 
   if (isLoading) {
     return (

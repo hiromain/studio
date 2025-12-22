@@ -33,10 +33,12 @@ export type PlannedMeal = {
   date: string; // YYYY-MM-DD
   meal: MealSlot;
   recipes: PlannedRecipe[];
+  eventId?: string; // Link to an event
 };
 
 export type PlannedEvent = {
   id: string;
-  date: string; // YYYY-MM-DD
   name: string;
+  startDate: string; // YYYY-MM-DD
+  duration: number; // in days
 };
