@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import { useRecipes } from '@/context/recipe-context';
-import type { Recipe } from '@/lib/types';
+import type { Recipe, Confidence } from '@/lib/types';
 import { useEffect } from 'react';
 
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, PlusCircle } from 'lucide-react';
+import { Trash2, PlusCircle, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const ingredientSchema = z.object({
   id: z.string().optional(),
@@ -51,43 +53,76 @@ const recipeSchema = z.object({
 
 type RecipeFormValues = z.infer<typeof recipeSchema>;
 
+type ImportedData = {
+    [K in keyof Recipe]?: Confidence<Recipe[K]>;
+} & { id?: string };
+
+
 interface RecipeFormProps {
-  initialData?: Recipe | Partial<Recipe>;
+  initialData?: Recipe | Partial<Recipe> | ImportedData;
 }
+
+const getConfidenceClass = (score: number) => {
+  if (score > 0.9) return 'border-green-500/80 focus-visible:ring-green-500';
+  if (score > 0.5) return 'border-yellow-500/80 focus-visible:ring-yellow-500';
+  return 'border-orange-500/80 focus-visible:ring-orange-500';
+};
+
+const ConfidenceTooltip = ({ justification }: { justification: string }) => (
+    <Tooltip>
+        <TooltipTrigger asChild>
+            <Info className="h-4 w-4 text-muted-foreground ml-2 cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs">
+            <p>{justification}</p>
+        </TooltipContent>
+    </Tooltip>
+)
 
 export function RecipeForm({ initialData }: RecipeFormProps) {
   const router = useRouter();
   const { addRecipe, updateRecipe } = useRecipes();
   const { toast } = useToast();
 
-  const isEditMode = !!initialData?.id;
+  const isEditMode = !!(initialData as Recipe)?.id && !(initialData as ImportedData)?.title?.confidence;
 
-  const defaultValues = initialData && Object.keys(initialData).length > 0
-    ? {
-      ...initialData,
-      title: initialData.title || '',
-      description: initialData.description || '',
-      category: initialData.category || 'Plat Principal',
-      prepTime: initialData.prepTime || 0,
-      cookTime: initialData.cookTime || 0,
-      servings: initialData.servings || 1,
-      ingredients: initialData.ingredients && initialData.ingredients.length > 0 ? initialData.ingredients.map(i => ({...i, id: i.id || `new-${Math.random()}`})) : [{ id: 'new-0', name: '', quantity: '' }],
-      steps: initialData.steps && initialData.steps.length > 0 ? initialData.steps : [''],
-      imageUrl: initialData.imageUrl || 'https://picsum.photos/seed/9/600/400',
-      imageHint: initialData.imageHint || 'food plate',
+  const processInitialData = (data?: Recipe | Partial<Recipe> | ImportedData) => {
+    if (!data || Object.keys(data).length === 0) {
+        return {
+          title: '', description: '', category: 'Plat Principal' as const, prepTime: 0, cookTime: 0, servings: 1,
+          ingredients: [{ id: 'new-0', name: '', quantity: '' }], steps: [''], imageUrl: 'https://picsum.photos/seed/9/600/400', imageHint: 'food plate',
+        };
     }
-    : {
-      title: '',
-      description: '',
-      category: 'Plat Principal' as const,
-      prepTime: 0,
-      cookTime: 0,
-      servings: 1,
-      ingredients: [{ id: 'new-0', name: '', quantity: '' }],
-      steps: [''],
-      imageUrl: 'https://picsum.photos/seed/9/600/400',
-      imageHint: 'food plate',
-    };
+    
+    // Check if it's imported data with confidence scores
+    if ((data as ImportedData)?.title?.confidence !== undefined) {
+        const imported = data as ImportedData;
+        return {
+            title: imported.title?.value || '',
+            description: imported.description?.value || '',
+            category: imported.category?.value || 'Plat Principal',
+            prepTime: imported.prepTime?.value || 0,
+            cookTime: imported.cookTime?.value || 0,
+            servings: imported.servings?.value || 1,
+            ingredients: imported.ingredients?.value?.map((i, idx) => ({ ...i, id: `new-${idx}` })) || [{ id: 'new-0', name: '', quantity: '' }],
+            steps: imported.steps?.value || [''],
+            imageUrl: 'https://picsum.photos/seed/9/600/400',
+            imageHint: imported.title?.value ? imported.title.value.toLowerCase().split(' ').slice(0,2).join(' ') : 'food plate',
+        }
+    }
+    
+    // It's a standard Recipe object for editing
+    const recipeData = data as Recipe;
+    return {
+      ...recipeData,
+      ingredients: recipeData.ingredients?.map(i => ({...i, id: i.id || `new-${Math.random()}`})) || [{ id: 'new-0', name: '', quantity: '' }],
+      steps: recipeData.steps?.length ? recipeData.steps : [''],
+      imageUrl: recipeData.imageUrl || 'https://picsum.photos/seed/9/600/400',
+      imageHint: recipeData.imageHint || 'food plate',
+    }
+  }
+
+  const defaultValues = processInitialData(initialData);
   
   const form = useForm<RecipeFormValues>({
     resolver: zodResolver(recipeSchema),
@@ -97,7 +132,7 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
   
   useEffect(() => {
     if (initialData) {
-      form.reset(defaultValues);
+      form.reset(processInitialData(initialData));
     }
   }, [initialData, form]);
 
@@ -113,18 +148,21 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
   });
   
   function onSubmit(data: RecipeFormValues) {
-    if (isEditMode && initialData.id) {
-      updateRecipe({ ...data, id: initialData.id });
+    if (isEditMode && (initialData as Recipe).id) {
+      updateRecipe({ ...data, id: (initialData as Recipe).id });
       toast({ title: "Recette modifiée!", description: "La recette a été mise à jour avec succès." });
-      router.push(`/recipes/${initialData.id}`);
+      router.push(`/recipes/${(initialData as Recipe).id}`);
     } else {
-      addRecipe(data);
+      const newRecipe = addRecipe(data);
       toast({ title: "Recette ajoutée!", description: "Votre nouvelle recette est prête." });
-      router.push('/');
+      router.push(`/recipes/${newRecipe.id}`);
     }
   }
 
+  const importedConfidences = initialData && (initialData as ImportedData)?.title?.confidence !== undefined ? initialData as ImportedData : null;
+
   return (
+    <TooltipProvider>
     <div className="container mx-auto max-w-4xl py-12 px-4">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 animate-in fade-in-50 duration-500">
@@ -132,14 +170,47 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
             <CardHeader><CardTitle className="text-2xl font-headline">{isEditMode ? 'Modifier la recette' : 'Ajouter une nouvelle recette'}</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               <FormField control={form.control} name="title" render={({ field }) => (
-                <FormItem><FormLabel>Titre</FormLabel><FormControl><Input placeholder="Ex: Gâteau au chocolat" {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem>
+                    <div className="flex items-center">
+                        <FormLabel>Titre</FormLabel>
+                        {importedConfidences?.title && <ConfidenceTooltip justification={importedConfidences.title.justification} />}
+                    </div>
+                    <FormControl>
+                        <Input 
+                            placeholder="Ex: Gâteau au chocolat" {...field}
+                            className={cn(importedConfidences?.title && getConfidenceClass(importedConfidences.title.confidence))}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
               )} />
               <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Une brève description de la recette..." {...field} /></FormControl><FormMessage /></FormItem>
+                <FormItem>
+                    <div className="flex items-center">
+                        <FormLabel>Description</FormLabel>
+                        {importedConfidences?.description && <ConfidenceTooltip justification={importedConfidences.description.justification} />}
+                    </div>
+                    <FormControl>
+                        <Textarea 
+                            placeholder="Une brève description de la recette..." {...field}
+                            className={cn(importedConfidences?.description && getConfidenceClass(importedConfidences.description.confidence))}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
               )} />
               <FormField control={form.control} name="category" render={({ field }) => (
-                <FormItem><FormLabel>Catégorie</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Choisissez une catégorie" /></SelectTrigger></FormControl>
+                <FormItem>
+                    <div className="flex items-center">
+                        <FormLabel>Catégorie</FormLabel>
+                        {importedConfidences?.category && <ConfidenceTooltip justification={importedConfidences.category.justification} />}
+                    </div>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                        <SelectTrigger className={cn(importedConfidences?.category && getConfidenceClass(importedConfidences.category.confidence))}>
+                            <SelectValue placeholder="Choisissez une catégorie" />
+                        </SelectTrigger>
+                    </FormControl>
                   <SelectContent>
                     {['Apéritif', 'Entrée', 'Plat Principal', 'Dessert', 'Boisson', 'Autre'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                   </SelectContent>
@@ -147,13 +218,28 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
               )} />
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField control={form.control} name="prepTime" render={({ field }) => (
-                  <FormItem><FormLabel>Temps de préparation (min)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <div className="flex items-center">
+                        <FormLabel>Préparation (min)</FormLabel>
+                        {importedConfidences?.prepTime && <ConfidenceTooltip justification={importedConfidences.prepTime.justification} />}
+                    </div>
+                    <FormControl><Input type="number" {...field} className={cn(importedConfidences?.prepTime && getConfidenceClass(importedConfidences.prepTime.confidence))} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="cookTime" render={({ field }) => (
-                  <FormItem><FormLabel>Temps de cuisson (min)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <div className="flex items-center">
+                        <FormLabel>Cuisson (min)</FormLabel>
+                        {importedConfidences?.cookTime && <ConfidenceTooltip justification={importedConfidences.cookTime.justification} />}
+                    </div>
+                    <FormControl><Input type="number" {...field} className={cn(importedConfidences?.cookTime && getConfidenceClass(importedConfidences.cookTime.confidence))} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="servings" render={({ field }) => (
-                  <FormItem><FormLabel>Portions</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem>
+                    <div className="flex items-center">
+                        <FormLabel>Portions</FormLabel>
+                        {importedConfidences?.servings && <ConfidenceTooltip justification={importedConfidences.servings.justification} />}
+                    </div>
+                    <FormControl><Input type="number" {...field} className={cn(importedConfidences?.servings && getConfidenceClass(importedConfidences.servings.confidence))} /></FormControl><FormMessage /></FormItem>
                 )} />
               </div>
                <FormField control={form.control} name="imageUrl" render={({ field }) => (
@@ -166,8 +252,13 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Ingrédients</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardHeader>
+                <div className="flex items-center">
+                    <CardTitle>Ingrédients</CardTitle>
+                    {importedConfidences?.ingredients && <ConfidenceTooltip justification={importedConfidences.ingredients.justification} />}
+                </div>
+            </CardHeader>
+            <CardContent className={cn("space-y-4", importedConfidences?.ingredients && getConfidenceClass(importedConfidences.ingredients.confidence), "border rounded-md p-4")}>
               {ingredientFields.map((field, index) => (
                 <div key={field.id} className="flex items-end gap-2">
                   <FormField control={form.control} name={`ingredients.${index}.quantity`} render={({ field }) => (
@@ -188,8 +279,13 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
           </Card>
           
           <Card>
-            <CardHeader><CardTitle>Étapes de préparation</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardHeader>
+                <div className="flex items-center">
+                    <CardTitle>Étapes de préparation</CardTitle>
+                    {importedConfidences?.steps && <ConfidenceTooltip justification={importedConfidences.steps.justification} />}
+                </div>
+            </CardHeader>
+            <CardContent className={cn("space-y-4", importedConfidences?.steps && getConfidenceClass(importedConfidences.steps.confidence), "border rounded-md p-4")}>
               {stepFields.map((field, index) => (
                 <div key={field.id} className="flex items-start gap-2">
                   <span className="pt-2 text-lg font-bold text-primary">{index + 1}.</span>
@@ -216,5 +312,6 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
         </form>
       </Form>
     </div>
+    </TooltipProvider>
   );
 }

@@ -7,11 +7,24 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Upload, Link as LinkIcon } from 'lucide-react';
-import type { Recipe } from '@/lib/types';
-import { importRecipeFromUrl, importRecipeFromPhoto } from '@/ai/flows/recipe-importer-flow';
+import { importRecipeFromUrl, importRecipeFromPhoto, type ImportedRecipeOutput } from '@/ai/flows/recipe-importer-flow';
+import type { Confidence } from '@/lib/types';
+
+
+type TransformedRecipe = {
+    [key: string]: any;
+    title?: Confidence<string>;
+    description?: Confidence<string>;
+    category?: Confidence<'Entrée' | 'Plat Principal' | 'Dessert' | 'Boisson' | 'Apéritif' | 'Autre'>;
+    prepTime?: Confidence<number>;
+    cookTime?: Confidence<number>;
+    servings?: Confidence<number>;
+    ingredients?: Confidence<Array<{name: string, quantity: string}>>;
+    steps?: Confidence<string[]>;
+}
 
 interface RecipeImporterProps {
-  onRecipeImported: (recipe: Partial<Recipe>) => void;
+  onRecipeImported: (recipe: TransformedRecipe) => void;
 }
 
 export function RecipeImporter({ onRecipeImported }: RecipeImporterProps) {
@@ -21,6 +34,24 @@ export function RecipeImporter({ onRecipeImported }: RecipeImporterProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const processAndSetRecipe = (result: ImportedRecipeOutput) => {
+    const transformed: TransformedRecipe = {};
+    for (const key in result) {
+        if (Object.prototype.hasOwnProperty.call(result, key)) {
+            const typedKey = key as keyof ImportedRecipeOutput;
+            const confidenceItem = result[typedKey];
+            if (confidenceItem) {
+                 transformed[typedKey] = {
+                    value: confidenceItem.value,
+                    confidence: confidenceItem.confidence,
+                    justification: confidenceItem.justification,
+                };
+            }
+        }
+    }
+    onRecipeImported(transformed);
+  }
+
   const handleUrlImport = async () => {
     if (!url) {
       toast({ variant: 'destructive', title: 'URL manquante', description: 'Veuillez entrer une URL.' });
@@ -29,7 +60,7 @@ export function RecipeImporter({ onRecipeImported }: RecipeImporterProps) {
     setIsLoading(true);
     try {
       const result = await importRecipeFromUrl({ url });
-      onRecipeImported(result);
+      processAndSetRecipe(result);
       toast({ title: 'Recette importée !', description: 'Vérifiez les informations ci-dessous.' });
     } catch (error) {
       console.error(error);
@@ -59,7 +90,7 @@ export function RecipeImporter({ onRecipeImported }: RecipeImporterProps) {
     setIsLoading(true);
     try {
       const result = await importRecipeFromPhoto({ photoDataUri: photoPreview });
-      onRecipeImported(result);
+      processAndSetRecipe(result);
       toast({ title: 'Recette extraite !', description: 'Vérifiez les informations ci-dessous.' });
     } catch (error) {
       console.error(error);

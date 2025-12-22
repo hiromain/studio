@@ -10,7 +10,7 @@ const LOCAL_STORAGE_KEY = 'mes_recettes';
 interface RecipeContextType {
   recipes: Recipe[];
   getRecipeById: (id: string) => Recipe | undefined;
-  addRecipe: (recipe: Omit<Recipe, 'id'>) => void;
+  addRecipe: (recipe: Omit<Recipe, 'id'>) => Recipe;
   updateRecipe: (recipe: Recipe) => void;
   deleteRecipe: (id: string) => void;
   isLoading: boolean;
@@ -62,6 +62,7 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
       ingredients: recipe.ingredients.map(ing => ({...ing, id: `ing-${Date.now()}-${Math.random()}`}))
     };
     setRecipes((prev) => [newRecipe, ...prev]);
+    return newRecipe;
   };
 
   const updateRecipe = (updatedRecipe: Recipe) => {

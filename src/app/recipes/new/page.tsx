@@ -5,11 +5,15 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRecipes } from '@/context/recipe-context';
 import { RecipeForm } from '@/components/recipe-form';
 import { RecipeImporter } from '@/components/recipe-importer';
-import type { Recipe } from '@/lib/types';
+import type { Recipe, Confidence } from '@/lib/types';
+
+type ImportedData = {
+    [K in keyof Recipe]?: Confidence<Recipe[K]>;
+};
 
 export default function NewRecipePage() {
   const { generatedRecipe, setGeneratedRecipe } = useRecipes();
-  const [initialRecipeData, setInitialRecipeData] = useState<Partial<Recipe> | undefined>();
+  const [initialRecipeData, setInitialRecipeData] = useState<Partial<Recipe> | ImportedData | undefined>();
 
   useEffect(() => {
     if (generatedRecipe) {
@@ -19,7 +23,7 @@ export default function NewRecipePage() {
     }
   }, [generatedRecipe, setGeneratedRecipe]);
 
-  const handleRecipeImported = (recipeData: Partial<Recipe>) => {
+  const handleRecipeImported = (recipeData: ImportedData) => {
     setInitialRecipeData(recipeData);
   };
 

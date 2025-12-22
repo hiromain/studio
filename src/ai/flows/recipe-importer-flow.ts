@@ -7,7 +7,12 @@
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { RecipeSchema } from '@/lib/ai-schema';
+
+const ConfidenceSchema = z.object({
+    value: z.any(),
+    confidence: z.number().min(0).max(1).describe('A confidence score from 0.0 to 1.0 on the accuracy of the extracted value.'),
+    justification: z.string().describe('A brief justification for why this value was extracted and what the confidence level is.')
+});
 
 // Define input schemas
 const UrlInputSchema = z.object({
@@ -21,18 +26,18 @@ const PhotoInputSchema = z.object({
 });
 export type PhotoInput = z.infer<typeof PhotoInputSchema>;
 
-// Define the output schema by picking fields from the main Recipe schema
-const ImportedRecipeOutputSchema = RecipeSchema.pick({
-    title: true,
-    description: true,
-    category: true,
-    prepTime: true,
-    cookTime: true,
-    servings: true,
-    ingredients: true,
-    steps: true,
-}).partial(); // Make all fields optional as the AI may not find all of them
+const ImportedRecipeOutputSchema = z.object({
+    title: ConfidenceSchema.extend({ value: z.string() }).optional(),
+    description: ConfidenceSchema.extend({ value: z.string() }).optional(),
+    category: ConfidenceSchema.extend({ value: z.enum(['Entrée', 'Plat Principal', 'Dessert', 'Boisson', 'Apéritif', 'Autre']) }).optional(),
+    prepTime: ConfidenceSchema.extend({ value: z.number() }).optional(),
+    cookTime: ConfidenceSchema.extend({ value: z.number() }).optional(),
+    servings: ConfidenceSchema.extend({ value: z.number() }).optional(),
+    ingredients: ConfidenceSchema.extend({ value: z.array(z.object({ name: z.string(), quantity: z.string()})) }).optional(),
+    steps: ConfidenceSchema.extend({ value: z.array(z.string()) }).optional(),
+}).partial();
 export type ImportedRecipeOutput = z.infer<typeof ImportedRecipeOutputSchema>;
+
 
 // Create prompts
 const urlPrompt = ai.definePrompt({
@@ -40,6 +45,12 @@ const urlPrompt = ai.definePrompt({
   input: { schema: UrlInputSchema },
   output: { schema: ImportedRecipeOutputSchema },
   prompt: `You are an expert recipe scraper. Scrape the recipe from the provided URL.
+For each field, you must provide the extracted value, a confidence score (0.0 to 1.0) and a brief justification.
+- Confidence 1.0: The data is clearly labelled and extracted.
+- Confidence 0.5-0.9: The data is inferred from context or has minor ambiguity.
+- Confidence < 0.5: The data is a wild guess or not found.
+If a value is not found, do not include the field in the output.
+
 URL: {{{url}}}`,
 });
 
@@ -48,6 +59,12 @@ const photoPrompt = ai.definePrompt({
   input: { schema: PhotoInputSchema },
   output: { schema: ImportedRecipeOutputSchema },
   prompt: `You are an expert recipe transcriber. Extract the recipe details from the provided image.
+For each field, you must provide the extracted value, a confidence score (0.0 to 1.0) and a brief justification.
+- Confidence 1.0: The data is clearly visible and readable.
+- Confidence 0.5-0.9: The data is inferred, slightly blurry, or has minor ambiguity.
+- Confidence < 0.5: The data is a wild guess, unreadable, or not found.
+If a value is not found, do not include the field in the output.
+
 Photo: {{media url=photoDataUri}}`,
 });
 

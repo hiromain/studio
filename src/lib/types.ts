@@ -42,3 +42,9 @@ export type PlannedEvent = {
   startDate: string; // YYYY-MM-DD
   duration: number; // in days
 };
+
+export type Confidence<T> = {
+  value: T;
+  confidence: number;
+  justification: string;
+};
