@@ -3,19 +3,23 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { addDays, format, startOfWeek, eachDayOfInterval, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { usePlanning } from '@/context/planning-context';
 import type { PlannedEvent } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { PlusCircle, CalendarDays, PartyPopper, Trash2, Pencil } from 'lucide-react';
+import { PlusCircle, CalendarDays, PartyPopper, Trash2, Pencil, Sparkles, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { Textarea } from '@/components/ui/textarea';
+import { useRecipes } from '@/context/recipe-context';
+import { generatePlanning } from '@/ai/flows/generate-planning-flow';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PlanningPage() {
   return (
@@ -29,8 +33,10 @@ export default function PlanningPage() {
 // ---- Event Components ----
 
 function EventsView() {
-    const { plannedEvents, removeEvent } = usePlanning();
+    const { plannedEvents, removeEvent, addEvent, addRecipeToPlan } = usePlanning();
+    const { recipes } = useRecipes();
     const router = useRouter();
+    const { toast } = useToast();
 
     const handleCreateEvent = (newEvent: PlannedEvent) => {
         router.push(`/planning/events/${newEvent.id}`);
@@ -47,13 +53,14 @@ function EventsView() {
                 </p>
             </div>
 
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-4">
                 <AddEventDialog onEventCreated={handleCreateEvent}>
-                    <Button size="lg">
+                    <Button size="lg" variant="outline">
                         <PlusCircle className="mr-2 h-5 w-5" />
-                        Créer un événement
+                        Créer un événement manuel
                     </Button>
                 </AddEventDialog>
+                 <GeneratePlanningDialog recipes={recipes} addEvent={addEvent} addRecipeToPlan={addRecipeToPlan} toast={toast} />
             </div>
 
             {plannedEvents.length > 0 ? (
@@ -155,6 +162,100 @@ function AddEventDialog({ children, onEventCreated, existingEvent }: { children:
         </div>
         <DialogFooter>
           <Button onClick={handleSave} disabled={!name.trim() || !startDate || duration <= 0}>{existingEvent ? "Enregistrer" : "Créer et planifier"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+
+function GeneratePlanningDialog({ recipes, addEvent, addRecipeToPlan, toast }: any) {
+  const [duration, setDuration] = useState(5);
+  const [constraints, setConstraints] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const handleGenerate = async () => {
+    if (duration <= 0 || !constraints.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Informations manquantes',
+        description: 'Veuillez renseigner une durée et des instructions.',
+      });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const result = await generatePlanning({
+        recipes,
+        duration,
+        constraints,
+      });
+
+      if (!result || !result.eventName || result.meals.length === 0) {
+        throw new Error("L'IA n'a pas pu générer de planning.");
+      }
+
+      const newEvent = addEvent(result.eventName, new Date(), duration);
+
+      result.meals.forEach(meal => {
+        const planDate = addDays(new Date(), meal.day - 1);
+        addRecipeToPlan(planDate, meal.meal, meal.recipeId, meal.mealType, newEvent.id);
+      });
+
+      toast({
+        title: 'Planning généré !',
+        description: `L'événement "${result.eventName}" a été créé.`,
+      });
+      setIsOpen(false);
+      setConstraints('');
+      setDuration(5);
+      router.push(`/planning/events/${newEvent.id}`);
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur de génération',
+        description: error.message || 'Un problème est survenu lors de la génération du planning.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button size="lg">
+          <Sparkles className="mr-2 h-5 w-5" />
+          Générer un planning IA
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Générer un planning avec l'IA</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div>
+            <Label htmlFor="duration-ai">Durée (en jours)</Label>
+            <Input id="duration-ai" type="number" min="1" max="14" value={duration} onChange={(e) => setDuration(parseInt(e.target.value, 10) || 1)} />
+          </div>
+          <div>
+            <Label htmlFor="constraints-ai">Instructions</Label>
+            <Textarea
+              id="constraints-ai"
+              placeholder="Ex: Repas végétariens, rapides pour le soir, avec du poisson le vendredi..."
+              value={constraints}
+              onChange={(e) => setConstraints(e.target.value)}
+              rows={4}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={handleGenerate} disabled={isLoading}>
+            {isLoading ? <Loader2 className="animate-spin" /> : 'Générer le planning'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
