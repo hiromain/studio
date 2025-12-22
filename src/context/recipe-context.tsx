@@ -3,9 +3,10 @@
 
 import React, { createContext, useContext, useState, ReactNode, useMemo, useEffect } from 'react';
 import type { Recipe } from '@/lib/types';
-import { MOCK_RECIPES } from '@/lib/data';
-
-const LOCAL_STORAGE_KEY = 'mes_recettes';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { doc } from 'firebase/firestore';
 
 interface RecipeContextType {
   recipes: Recipe[];
@@ -21,58 +22,51 @@ interface RecipeContextType {
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
 
 export const RecipeProvider = ({ children }: { children: ReactNode }) => {
+  const firestore = useFirestore();
+  const recipesCollection = useMemoFirebase(() => collection(firestore, 'recipes'), [firestore]);
+  const { data: recipesData, isLoading: recipesIsLoading } = useCollection<Recipe>(recipesCollection);
+
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [generatedRecipe, setGeneratedRecipe] = useState<Partial<Recipe> | null>(null);
 
-  useEffect(() => {
-    try {
-      const storedRecipes = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedRecipes) {
-        setRecipes(JSON.parse(storedRecipes));
-      } else {
-        setRecipes(MOCK_RECIPES);
-      }
-    } catch (error) {
-      console.error("Failed to load recipes from local storage", error);
-      setRecipes(MOCK_RECIPES);
-    } finally {
-      setIsLoading(false);
+   useEffect(() => {
+    if (recipesData) {
+      setRecipes(recipesData);
     }
-  }, []);
+  }, [recipesData]);
 
   useEffect(() => {
-    if (!isLoading) {
-      try {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(recipes));
-      } catch (error) {
-        console.error("Failed to save recipes to local storage", error);
-      }
-    }
-  }, [recipes, isLoading]);
+    setIsLoading(recipesIsLoading);
+  }, [recipesIsLoading]);
+
 
   const getRecipeById = (id: string) => {
     return recipes.find((r) => r.id === id);
   };
 
   const addRecipe = (recipe: Omit<Recipe, 'id'>) => {
+    const newRecipeId = `recipe-${Date.now()}-${Math.random()}`;
     const newRecipe: Recipe = {
       ...recipe,
-      id: `recipe-${Date.now()}-${Math.random()}`,
+      id: newRecipeId,
       ingredients: recipe.ingredients.map(ing => ({...ing, id: `ing-${Date.now()}-${Math.random()}`}))
     };
-    setRecipes((prev) => [newRecipe, ...prev]);
+    
+    if (!recipesCollection) return newRecipe; // Should not happen
+    addDocumentNonBlocking(recipesCollection, newRecipe);
+    
     return newRecipe;
   };
 
   const updateRecipe = (updatedRecipe: Recipe) => {
-    setRecipes((prev) =>
-      prev.map((r) => (r.id === updatedRecipe.id ? updatedRecipe : r))
-    );
+     const recipeRef = doc(firestore, 'recipes', updatedRecipe.id);
+     setDocumentNonBlocking(recipeRef, updatedRecipe, { merge: true });
   };
 
   const deleteRecipe = (id: string) => {
-    setRecipes((prev) => prev.filter((r) => r.id !== id));
+    const recipeRef = doc(firestore, 'recipes', id);
+    deleteDocumentNonBlocking(recipeRef);
   };
 
   const value = useMemo(() => ({
