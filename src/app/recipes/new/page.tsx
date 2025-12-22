@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRecipes } from '@/context/recipe-context';
 import { RecipeForm } from '@/components/recipe-form';
 import { RecipeImporter } from '@/components/recipe-importer';
