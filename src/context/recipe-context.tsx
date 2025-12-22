@@ -83,7 +83,7 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="text-primary font-headline text-2xl">Chargement...</div>
+        <div className="text-primary font-serif text-2xl">Chargement...</div>
       </div>
     );
   }

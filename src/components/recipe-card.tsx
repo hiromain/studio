@@ -28,7 +28,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
         <CardContent className="p-4 flex flex-col justify-between flex-1">
           <div>
             <Badge variant="secondary" className="mb-2">{recipe.category}</Badge>
-            <CardTitle className="font-headline text-xl leading-tight mb-2">{recipe.title}</CardTitle>
+            <CardTitle className="font-serif text-xl leading-tight mb-2">{recipe.title}</CardTitle>
           </div>
           <div className="flex items-center text-sm text-muted-foreground mt-2">
             <Clock className="mr-2 h-4 w-4" />

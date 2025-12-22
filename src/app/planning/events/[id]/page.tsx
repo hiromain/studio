@@ -79,7 +79,7 @@ export default function EventPlanningPage() {
                     <ArrowLeft className="mr-2 h-4 w-4"/>
                     Retour aux événements
                 </Button>
-                <h1 className="text-4xl font-bold font-headline text-primary">
+                <h1 className="text-4xl font-bold font-serif text-primary">
                 {event.name}
                 </h1>
                 <p className="text-muted-foreground">
@@ -106,7 +106,7 @@ export default function EventPlanningPage() {
           return (
             <Card key={day.toString()} className="flex flex-col">
               <CardHeader className="text-center">
-                <CardTitle className="font-headline text-xl capitalize">
+                <CardTitle className="font-serif text-xl capitalize">
                   {format(day, 'eeee d', { locale: fr })}
                 </CardTitle>
               </CardHeader>

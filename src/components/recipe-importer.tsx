@@ -103,7 +103,7 @@ export function RecipeImporter({ onRecipeImported }: RecipeImporterProps) {
   return (
     <Card className="animate-in fade-in-50 duration-500">
       <CardHeader>
-        <CardTitle className="text-2xl font-headline">Importer une recette</CardTitle>
+        <CardTitle className="text-2xl font-serif">Importer une recette</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="url">

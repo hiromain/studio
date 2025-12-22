@@ -44,7 +44,7 @@ export default function RecipeDetailPage() {
         <div className="flex justify-between items-start mb-4">
           <div>
             <Badge variant="secondary">{recipe.category}</Badge>
-            <h1 className="mt-2 font-headline text-4xl sm:text-5xl font-bold text-primary">
+            <h1 className="mt-2 font-serif text-4xl sm:text-5xl font-bold text-primary">
               {recipe.title}
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">{recipe.description}</p>
@@ -111,7 +111,7 @@ export default function RecipeDetailPage() {
 
         <div className="grid md:grid-cols-3 gap-x-8 gap-y-12">
           <div className="md:col-span-1">
-            <h2 className="font-headline text-2xl font-bold mb-4 border-b-2 border-primary pb-2">Ingrédients</h2>
+            <h2 className="font-serif text-2xl font-bold mb-4 border-b-2 border-primary pb-2">Ingrédients</h2>
             <ul className="space-y-3">
               {recipe.ingredients.map((ingredient, index) => (
                 <li key={index} className="flex items-start">
@@ -122,7 +122,7 @@ export default function RecipeDetailPage() {
             </ul>
           </div>
           <div className="md:col-span-2">
-            <h2 className="font-headline text-2xl font-bold mb-4 border-b-2 border-primary pb-2">Préparation</h2>
+            <h2 className="font-serif text-2xl font-bold mb-4 border-b-2 border-primary pb-2">Préparation</h2>
             <ol className="space-y-6">
               {recipe.steps.map((step, index) => (
                 <li key={index} className="flex items-start">

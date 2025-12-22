@@ -45,7 +45,7 @@ function EventsView() {
     return (
         <div className="space-y-8">
             <div className="text-center">
-                <h1 className="text-4xl font-bold font-headline tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+                <h1 className="text-4xl font-bold font-serif tracking-tight text-foreground sm:text-5xl lg:text-6xl">
                     Vos Événements
                 </h1>
                 <p className="mt-4 max-w-2xl mx-auto text-lg text-muted-foreground">
@@ -68,7 +68,7 @@ function EventsView() {
                     {plannedEvents.map(event => (
                         <Card key={event.id} className="flex flex-col">
                             <CardHeader>
-                                <CardTitle className="font-headline flex justify-between items-start">
+                                <CardTitle className="font-serif flex justify-between items-start">
                                     {event.name}
                                     <div className="flex gap-1">
                                         <AddEventDialog existingEvent={event}>

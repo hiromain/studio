@@ -167,7 +167,7 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 animate-in fade-in-50 duration-500">
           <Card>
-            <CardHeader><CardTitle className="text-2xl font-headline">{isEditMode ? 'Modifier la recette' : 'Ajouter une nouvelle recette'}</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-2xl font-serif">{isEditMode ? 'Modifier la recette' : 'Ajouter une nouvelle recette'}</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               <FormField control={form.control} name="title" render={({ field }) => (
                 <FormItem>

@@ -75,7 +75,7 @@ export default function GeneratorPage() {
     <div className="container mx-auto max-w-2xl py-12 px-4">
       <Card className="animate-in fade-in-50 duration-500">
         <CardHeader>
-          <CardTitle className="font-headline text-3xl flex items-center gap-2">
+          <CardTitle className="font-serif text-3xl flex items-center gap-2">
             <Sparkles className="h-8 w-8 text-primary" />
             Générateur de Recettes IA
           </CardTitle>

@@ -70,7 +70,7 @@ export default function ShoppingListPage() {
     return (
       <div className="container mx-auto max-w-2xl py-12 px-4 text-center">
         <ShoppingCart className="mx-auto h-16 w-16 text-muted-foreground" />
-        <h1 className="mt-4 font-headline text-3xl font-bold">Votre liste de courses est vide</h1>
+        <h1 className="mt-4 font-serif text-3xl font-bold">Votre liste de courses est vide</h1>
         <p className="mt-2 text-muted-foreground">
           Retournez à l'accueil pour sélectionner des recettes.
         </p>
@@ -103,14 +103,14 @@ export default function ShoppingListPage() {
         <Card className="shadow-lg animate-in fade-in-50 duration-500 print:shadow-none print:border-none print:bg-transparent">
           <CardHeader>
             <div className="flex justify-between items-center no-print">
-              <CardTitle className="font-headline text-3xl text-primary">Liste de Courses</CardTitle>
+              <CardTitle className="font-serif text-3xl text-primary">Liste de Courses</CardTitle>
               <Button variant="outline" onClick={handlePrint}>
                 <Printer className="mr-2 h-4 w-4" />
                 Imprimer
               </Button>
             </div>
              <div className="hidden print:block text-center mb-4">
-                <h1 className="font-headline text-3xl text-black">Liste de Courses</h1>
+                <h1 className="font-serif text-3xl text-black">Liste de Courses</h1>
              </div>
           </CardHeader>
           <CardContent>
