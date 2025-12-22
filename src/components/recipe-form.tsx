@@ -38,7 +38,7 @@ const ingredientSchema = z.object({
 const recipeSchema = z.object({
   title: z.string().min(3, "Le titre doit contenir au moins 3 caractères."),
   description: z.string().min(10, "La description doit contenir au moins 10 caractères."),
-  category: z.enum(['Entrée', 'Plat Principal', 'Dessert', 'Boisson', 'Autre']),
+  category: z.enum(['Entrée', 'Plat Principal', 'Dessert', 'Boisson', 'Apéritif', 'Autre']),
   prepTime: z.coerce.number().min(0, "Le temps doit être un nombre positif."),
   cookTime: z.coerce.number().min(0, "Le temps doit être un nombre positif."),
   servings: z.coerce.number().min(1, "Les portions doivent être d'au moins 1."),
@@ -125,7 +125,7 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
                 <FormItem><FormLabel>Catégorie</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger><SelectValue placeholder="Choisissez une catégorie" /></SelectTrigger></FormControl>
                   <SelectContent>
-                    {['Entrée', 'Plat Principal', 'Dessert', 'Boisson', 'Autre'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                    {['Apéritif', 'Entrée', 'Plat Principal', 'Dessert', 'Boisson', 'Autre'].map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                   </SelectContent>
                 </Select><FormMessage /></FormItem>
               )} />

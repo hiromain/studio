@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/layout/header';
 import { RecipeProvider } from '@/context/recipe-context';
+import { PlanningProvider } from '@/context/planning-context';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -23,11 +24,13 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <RecipeProvider>
-          <div className="relative flex min-h-screen flex-col">
-            <Header />
-            <main className="flex-1">{children}</main>
-          </div>
-          <Toaster />
+          <PlanningProvider>
+            <div className="relative flex min-h-screen flex-col">
+              <Header />
+              <main className="flex-1">{children}</main>
+            </div>
+            <Toaster />
+          </PlanningProvider>
         </RecipeProvider>
       </body>
     </html>

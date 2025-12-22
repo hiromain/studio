@@ -8,7 +8,7 @@ export type Recipe = {
   id: string;
   title: string;
   description: string;
-  category: 'Entrée' | 'Plat Principal' | 'Dessert' | 'Boisson' | 'Autre';
+  category: 'Entrée' | 'Plat Principal' | 'Dessert' | 'Boisson' | 'Apéritif' | 'Autre';
   prepTime: number;
   cookTime: number;
   servings: number;
@@ -16,4 +16,21 @@ export type Recipe = {
   steps: string[];
   imageUrl: string;
   imageHint: string;
+};
+
+export type MealType = 'Apéritif' | 'Entrée' | 'Plat Principal' | 'Dessert';
+
+export const MEAL_TYPES: MealType[] = ['Apéritif', 'Entrée', 'Plat Principal', 'Dessert'];
+
+export type PlannedRecipe = {
+  recipeId: string;
+  mealType: MealType;
+};
+
+export type MealSlot = 'Midi' | 'Soir';
+
+export type PlannedMeal = {
+  date: string; // YYYY-MM-DD
+  meal: MealSlot;
+  recipes: PlannedRecipe[];
 };
