@@ -1,0 +1,168 @@
+{
+  "entities": {
+    "Recipe": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Recipe",
+      "type": "object",
+      "description": "Represents a recipe with its ingredients, steps, and associated data.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Recipe entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the recipe."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the recipe."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the recipe's image.",
+          "format": "uri"
+        },
+        "preparationTime": {
+          "type": "number",
+          "description": "The preparation time in minutes."
+        },
+        "cookingTime": {
+          "type": "number",
+          "description": "The cooking time in minutes."
+        },
+        "categoryIds": {
+          "type": "array",
+          "description": "References to Categories. (Relationship: Category N:N Recipe)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ingredientIds": {
+          "type": "array",
+          "description": "References to Ingredients. (Relationship: Ingredient N:N Recipe)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "steps": {
+          "type": "array",
+          "description": "An array of strings describing the steps to make the recipe.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "steps"
+      ]
+    },
+    "Ingredient": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ingredient",
+      "type": "object",
+      "description": "Represents an ingredient used in a recipe.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Ingredient entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the ingredient."
+        },
+        "quantity": {
+          "type": "string",
+          "description": "The quantity of the ingredient (e.g., '1 cup', '2 tbsp')."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "quantity"
+      ]
+    },
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Represents a category of recipes (e.g., 'Dessert', 'Main Course').",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the category."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/recipes/{recipeId}",
+        "definition": {
+          "entityName": "Recipe",
+          "schema": {
+            "$ref": "#/backend/entities/Recipe"
+          },
+          "description": "Stores recipe data. Includes fields for name, description, ingredients, steps, and associated data.",
+          "params": [
+            {
+              "name": "recipeId",
+              "description": "Unique identifier for the recipe."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/ingredients/{ingredientId}",
+        "definition": {
+          "entityName": "Ingredient",
+          "schema": {
+            "$ref": "#/backend/entities/Ingredient"
+          },
+          "description": "Stores ingredient data, including name and quantity.",
+          "params": [
+            {
+              "name": "ingredientId",
+              "description": "Unique identifier for the ingredient."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Stores recipe category data, including name.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "Unique identifier for the category."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to store recipes, ingredients, and categories in a way that supports the application's features and prioritizes security and scalability. User data is kept separate and secured via path-based ownership.\n\nRecipes are stored in a top-level `recipes` collection. This allows for easy querying and listing of all recipes.  To facilitate efficient filtering and searching, consider using Algolia or a similar service to index the recipe data. Since this application doesn't have users we can store the recipes directly at root. \n\nIngredients and Categories are stored in top-level collections. This allows for easy querying and listing of all available ingredients and categories.\n\n**Authorization Independence & QAPs:**\nSince this application stores all the data at the top level and does not have users, authorization independence isn't really relevant. If this application had users and they could own a recipe, the recipes would have to be stored in a `/users/{userId}/recipes/{recipeId}` path so each user can only query their own recipes. The QAP would be supported by these path based rules."
+  }
+}
