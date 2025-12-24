@@ -40,9 +40,9 @@ const generatePlanningFlow = ai.defineFlow(
   async ({ recipes, duration, constraints }) => {
     const availableRecipesJson = JSON.stringify(recipes.map(r => ({ id: r.id, title: r.title, description: r.description, category: r.category })));
     
-    const prompt = ai.definePrompt({
-        name: 'generatePlanningPrompt',
-        output: { schema: GeneratePlanningOutputSchema },
+    try {
+      const { output } = await ai.generate({
+        model: 'googleai/gemini-2.0-flash',
         system: `You are an expert meal planner. Your task is to create a balanced and varied meal plan for a user based on their constraints and a list of available recipes.
 
 - You will plan for **${duration}** days.
@@ -56,10 +56,18 @@ const generatePlanningFlow = ai.defineFlow(
 ${availableRecipesJson}
 
 Please generate the meal plan.`,
-    });
+        output: { schema: GeneratePlanningOutputSchema },
+      });
 
-    const { output } = await prompt({});
-    return output ?? { eventName: `Mon planning de ${duration} jours`, meals: [] };
+      if (!output) {
+        throw new Error('L\'IA a retourné un résultat de planning vide.');
+      }
+
+      return output;
+    } catch (error) {
+      console.error('Erreur planning Genkit:', error);
+      throw error;
+    }
   }
 );
 

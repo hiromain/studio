@@ -17,6 +17,8 @@ interface RecipeContextType {
   isLoading: boolean;
   generatedRecipe: Partial<Recipe> | null;
   setGeneratedRecipe: (recipe: Partial<Recipe> | null) => void;
+  generatedMenu: Partial<Recipe>[] | null;
+  setGeneratedMenu: (menu: Partial<Recipe>[] | null) => void;
 }
 
 const RecipeContext = createContext<RecipeContextType | undefined>(undefined);
@@ -29,6 +31,7 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [generatedRecipe, setGeneratedRecipe] = useState<Partial<Recipe> | null>(null);
+  const [generatedMenu, setGeneratedMenu] = useState<Partial<Recipe>[] | null>(null);
 
    useEffect(() => {
     if (recipesData) {
@@ -78,7 +81,9 @@ export const RecipeProvider = ({ children }: { children: ReactNode }) => {
     isLoading,
     generatedRecipe,
     setGeneratedRecipe,
-  }), [recipes, isLoading, generatedRecipe]);
+    generatedMenu,
+    setGeneratedMenu,
+  }), [recipes, isLoading, generatedRecipe, generatedMenu]);
 
   return (
     <RecipeContext.Provider value={value}>

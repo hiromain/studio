@@ -6,7 +6,7 @@ export const IngredientSchema = z.object({
 });
 
 export const RecipeSchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   title: z.string().describe('The title of the recipe.'),
   description: z.string().describe('A brief, engaging description of the recipe.'),
   category: z.enum(['Entrée', 'Plat Principal', 'Dessert', 'Boisson', 'Apéritif', 'Autre']).describe('The category of the dish.'),
@@ -15,6 +15,12 @@ export const RecipeSchema = z.object({
   servings: z.coerce.number().describe('Number of servings the recipe makes.'),
   ingredients: z.array(IngredientSchema).describe('A list of ingredients.'),
   steps: z.array(z.string()).describe('An ordered list of preparation steps.'),
-  imageUrl: z.string().url().describe('A URL for an image of the dish.'),
-  imageHint: z.string().describe('A short, 2-word hint for the image search (e.g., "chocolate cake").'),
+  imageUrl: z.string().optional().describe('A URL for an image of the dish.'),
+  imageHint: z.string().optional().describe('A short, 2-word hint for the image search (e.g., "chocolate cake").'),
+});
+
+export const MenuSchema = z.object({
+  title: z.string().describe('The title of the menu.'),
+  description: z.string().describe('A brief description of the menu.'),
+  recipes: z.array(RecipeSchema.omit({ id: true })).describe('A list of recipes in the menu.'),
 });

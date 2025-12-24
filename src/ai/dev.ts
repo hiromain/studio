@@ -2,4 +2,5 @@
 // Flows will be imported for their side effects in this file.
 import './flows/recipe-importer-flow';
 import './flows/generate-recipe-flow';
+import './flows/generate-menu-flow';
 import './flows/generate-planning-flow';
