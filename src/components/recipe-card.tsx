@@ -4,6 +4,7 @@ import type { Recipe } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Utensils } from 'lucide-react';
+import { formatDuration } from '@/lib/utils';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -11,7 +12,7 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe }: RecipeCardProps) {
   return (
-    <Link href={`/recipes/${recipe.id}`} className="block h-full group">
+    <Link href={`/recettes/${recipe.id}`} className="block h-full group">
       <Card className="h-full overflow-hidden transition-all duration-300 border-none shadow-md hover:shadow-2xl bg-card rounded-2xl">
         <CardHeader className="p-0 relative">
           <div className="relative h-56 w-full overflow-hidden">
@@ -41,7 +42,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
           <div className="flex items-center justify-between text-sm font-medium text-muted-foreground pt-4 border-t border-border/50">
             <div className="flex items-center">
               <Clock className="mr-1.5 h-4 w-4 text-primary" />
-              <span>{recipe.prepTime + recipe.cookTime} min</span>
+              <span>{formatDuration(recipe.prepTime + recipe.cookTime)}</span>
             </div>
             <div className="flex items-center">
               <Utensils className="mr-1.5 h-4 w-4 text-accent" />

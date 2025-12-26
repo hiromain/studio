@@ -59,7 +59,7 @@ export default function GeneratorPage() {
         description: 'Vérifiez et modifiez les informations ci-dessous avant d\'enregistrer.',
       });
 
-      router.push('/recipes/new'); // Navigate to the form page
+      router.push('/recettes/nouvelle'); // Navigate to the form page
     } catch (error) {
       console.error(error);
       toast({
@@ -106,7 +106,7 @@ export default function GeneratorPage() {
           description: 'Vous pouvez maintenant voir les recettes générées.',
         });
   
-        router.push('/recipes/new-menu'); // Navigate to a new page for reviewing the menu (need to create this)
+        router.push('/recettes/nouveau-menu'); // Navigate to a new page for reviewing the menu (need to create this)
       } catch (error) {
         console.error(error);
         toast({

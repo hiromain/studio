@@ -130,7 +130,7 @@ export default function HomePage() {
   const generateShoppingList = () => {
     if (selectedRecipes.size > 0) {
       const ids = Array.from(selectedRecipes).join(',');
-      router.push(`/shopping-list?ids=${ids}`);
+      router.push(`/liste-courses?ids=${ids}`);
     }
   };
   

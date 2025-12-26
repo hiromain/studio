@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Users, Soup, Trash2, Pencil, Heart, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { formatDuration } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,7 +59,7 @@ export default function RecipeDetailPage() {
           </div>
           <div className="flex gap-3 flex-shrink-0">
             <Button asChild variant="secondary" size="icon" className="rounded-full h-12 w-12 shadow-sm">
-              <Link href={`/recipes/${recipe.id}/edit`}>
+              <Link href={`/recettes/${recipe.id}/modifier`}>
                 <Pencil className="h-5 w-5" />
                 <span className="sr-only">Modifier</span>
               </Link>
@@ -104,12 +105,12 @@ export default function RecipeDetailPage() {
           <div className="bg-background/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center border border-border/50">
             <Clock className="h-8 w-8 text-primary mb-3" />
             <p className="font-bold text-lg">Prépa'</p>
-            <p className="text-muted-foreground font-medium">{recipe.prepTime} min</p>
+            <p className="text-muted-foreground font-medium">{formatDuration(recipe.prepTime)}</p>
           </div>
           <div className="bg-background/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center border border-border/50">
             <Soup className="h-8 w-8 text-primary mb-3" />
             <p className="font-bold text-lg">Cuisson</p>
-            <p className="text-muted-foreground font-medium">{recipe.cookTime} min</p>
+            <p className="text-muted-foreground font-medium">{formatDuration(recipe.cookTime)}</p>
           </div>
           <div className="bg-background/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm flex flex-col items-center justify-center text-center border border-border/50 col-span-2 sm:col-span-1">
             <Users className="h-8 w-8 text-primary mb-3" />

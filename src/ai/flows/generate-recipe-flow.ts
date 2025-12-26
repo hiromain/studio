@@ -10,7 +10,7 @@ import {RecipeSchema} from '@/lib/ai-schema';
 
 // Define input schemas
 const GenerateRecipeInputSchema = z.object({
-  userInput: z.string().describe('The user\'s request for the recipe, e.g., "a simple chicken pasta" or "a vegan chocolate cake".'),
+  userInput: z.string().describe('The user\'s request for the recipe.'),
   systemPrompt: z.string().optional().describe('The system prompt to guide the AI model.'),
 });
 export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
@@ -41,8 +41,8 @@ const generateRecipeFlow = ai.defineFlow(
     try {
       const { output } = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
-        system: input.systemPrompt || 'Tu es un chef cuisinier créatif. Ta mission est de générer des recettes délicieuses et faciles à suivre.',
-        prompt: `Basé sur la demande de l'utilisateur, génère une nouvelle recette : "${input.userInput}"`,
+        system: input.systemPrompt || 'Tu es un chef cuisinier créatif. Ta mission est de générer des recettes délicieuses et faciles à suivre. Tu dois TOUJOURS répondre en français.',
+        prompt: `Basé sur la demande de l'utilisateur, génère une nouvelle recette en FRANÇAIS : "${input.userInput}"`,
         output: { schema: GeneratedRecipeOutputSchema },
       });
 

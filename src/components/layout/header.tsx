@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ChefHat, PlusCircle, CalendarDays, Sparkles, Settings, BarChart } from 'lucide-react';
+import { ChefHat, PlusCircle, CalendarDays, Sparkles, Settings, BarChart, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export function Header() {
@@ -16,6 +16,12 @@ export function Header() {
         </Link>
         <div className="flex flex-1 items-center justify-end space-x-2">
           <nav className="hidden items-center space-x-1 md:flex">
+             <Button asChild variant="ghost">
+              <Link href="/recettes">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Mes Recettes
+              </Link>
+            </Button>
             <Button asChild variant="ghost">
               <Link href="/planning">
                 <CalendarDays className="mr-2 h-4 w-4" />
@@ -23,26 +29,26 @@ export function Header() {
               </Link>
             </Button>
              <Button asChild variant="ghost">
-              <Link href="/stats">
+              <Link href="/statistiques">
                 <BarChart className="mr-2 h-4 w-4" />
                 Statistiques
               </Link>
             </Button>
             <Button asChild variant="ghost">
-              <Link href="/generator">
+              <Link href="/generateur">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Générateur IA
               </Link>
             </Button>
              <Button asChild variant="ghost">
-              <Link href="/settings">
+              <Link href="/parametres">
                 <Settings className="mr-2 h-4 w-4" />
                 Paramètres
               </Link>
             </Button>
           </nav>
            <Button asChild>
-              <Link href="/recipes/new">
+              <Link href="/recettes/nouvelle">
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Ajouter
               </Link>

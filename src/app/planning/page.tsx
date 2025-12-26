@@ -9,7 +9,7 @@ import { usePlanning } from '@/context/planning-context';
 import type { PlannedEvent, Recipe } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { PlusCircle, CalendarDays, PartyPopper, Trash2, Pencil, Sparkles, Loader2, Utensils, AlertTriangle } from 'lucide-react';
+import { PlusCircle, CalendarDays, PartyPopper, Trash2, Pencil, Sparkles, Loader2, Utensils, ChefHat } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useRecipes } from '@/context/recipe-context';
 import { generatePlanning } from '@/ai/flows/generate-planning-flow';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function PlanningPage() {
   return (
@@ -40,7 +39,7 @@ function EventsView() {
     const { toast } = useToast();
 
     const handleCreateEvent = (newEvent: PlannedEvent) => {
-        router.push(`/planning/events/${newEvent.id}`);
+        router.push(`/planning/evenements/${newEvent.id}`);
     }
 
     if (isLoading) {
@@ -95,11 +94,11 @@ function EventsView() {
                                     {event.duration} jour{event.duration > 1 ? 's' : ''} • Dès le {format(parseISO(event.startDate), 'd MMMM yyyy', { locale: fr })}
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="flex-1 flex flex-col justify-end p-6 pt-0 mt-6">
+                            <CardContent className="flex-1 flex flex-col justify-end p-6 pt-0 mt-6 gap-3">
                                 <Button asChild className="w-full rounded-xl h-12 font-bold shadow-md">
-                                    <Link href={`/planning/events/${event.id}`}>
+                                    <Link href={`/planning/evenements/${event.id}`}>
                                         <Utensils className="mr-2 h-4 w-4" />
-                                        C'est parti !
+                                        Voir le détail
                                     </Link>
                                 </Button>
                             </CardContent>
@@ -186,36 +185,34 @@ function AddEventDialog({ children, onEventCreated, existingEvent }: { children:
 function GeneratePlanningDialog({ recipes, addEvent, addRecipeToPlan, addRecipe, toast }: any) {
   const [duration, setDuration] = useState(5);
   const [constraints, setConstraints] = useState('');
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleGenerate = async () => {
-    if (duration <= 0 || !constraints.trim()) {
+    if (duration <= 0 || !constraints.trim() || !startDate) {
       toast({
         variant: 'destructive',
         title: 'Heu...',
-        description: 'Dis-moi au moins combien de jours et ce que tu as en tête !',
+        description: 'Dis-moi au moins quand, combien de jours et ce que tu as en tête !',
       });
       return;
     }
     setIsLoading(true);
     try {
-      console.log('Envoi au planning flow:', { recipeCount: recipes.length, duration, constraints });
       const result = await generatePlanning({
         recipes,
         duration,
         constraints,
       });
 
-      console.log('Résultat planning flow:', result);
-
       if (!result || !result.eventName || !result.meals || result.meals.length === 0) {
         throw new Error("L'IA n'a pas pu générer de planning valide.");
       }
 
-      // 1. Créer l'événement de planning
-      const newEvent = addEvent(result.eventName, new Date(), duration);
+      // 1. Créer l'événement de planning avec la date choisie
+      const newEvent = addEvent(result.eventName, startDate, duration);
 
       // 2. Traiter chaque repas
       for (const meal of result.meals) {
@@ -223,9 +220,6 @@ function GeneratePlanningDialog({ recipes, addEvent, addRecipeToPlan, addRecipe,
 
         // Si c'est une nouvelle recette générée
         if (meal.isNew && meal.newRecipeDetails) {
-            console.log('Enregistrement de la nouvelle recette:', meal.newRecipeDetails.title);
-            
-            // On s'assure que les données sont complètes
             const recipeData: Omit<Recipe, 'id'> = {
                 title: meal.newRecipeDetails.title || 'Recette sans titre',
                 description: meal.newRecipeDetails.description || 'Une délicieuse recette générée par l\'IA.',
@@ -243,9 +237,9 @@ function GeneratePlanningDialog({ recipes, addEvent, addRecipeToPlan, addRecipe,
             recipeId = savedRecipe.id;
         }
 
-        // 3. Ajouter au planning si on a un ID
+        // 3. Ajouter au planning avec la date relative à startDate
         if (recipeId) {
-            const planDate = addDays(new Date(), meal.day - 1);
+            const planDate = addDays(startDate, meal.day - 1);
             addRecipeToPlan(planDate, meal.meal, recipeId, meal.mealType, newEvent.id);
         }
       }
@@ -258,7 +252,7 @@ function GeneratePlanningDialog({ recipes, addEvent, addRecipeToPlan, addRecipe,
       setIsOpen(false);
       setConstraints('');
       setDuration(5);
-      router.push(`/planning/events/${newEvent.id}`);
+      router.push(`/planning/evenements/${newEvent.id}`);
     } catch (error: any) {
       console.error('Erreur UI Planning:', error);
       toast({
@@ -287,6 +281,20 @@ function GeneratePlanningDialog({ recipes, addEvent, addRecipeToPlan, addRecipe,
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-6 py-4">
+           <div className="space-y-2 flex flex-col">
+                <Label className="font-bold mb-1">On commence quand ?</Label>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="font-normal justify-start rounded-xl h-11 bg-background/50 border-none">
+                           <CalendarDays className="mr-2 h-4 w-4 text-primary"/>
+                           {startDate ? format(startDate, 'd MMMM yyyy', { locale: fr}) : "Choisir une date"}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 rounded-2xl shadow-2xl border-none" align="start">
+                        <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
+                    </PopoverContent>
+                </Popover>
+            </div>
           <div className="space-y-2">
             <Label htmlFor="duration-ai" className="font-bold">Durée (jours)</Label>
             <Input id="duration-ai" type="number" min="1" max="14" value={duration} onChange={(e) => setDuration(parseInt(e.target.value, 10) || 1)} className="rounded-xl bg-background/50 border-none h-11"/>
@@ -295,7 +303,7 @@ function GeneratePlanningDialog({ recipes, addEvent, addRecipeToPlan, addRecipe,
             <Label htmlFor="constraints-ai" className="font-bold">Tes envies du moment</Label>
             <Textarea
               id="constraints-ai"
-              placeholder="Dis-moi tout : végétarien, rapide, sans choux de Bruxelles, ambiance italie... (Je créerai les recettes manquantes !)"
+              placeholder="Dis-moi tout : végétarien, rapide, ambiance italie... (Je créerai les recettes manquantes !)"
               value={constraints}
               onChange={(e) => setConstraints(e.target.value)}
               rows={4}

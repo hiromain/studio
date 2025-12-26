@@ -22,13 +22,11 @@ export const generateMenuFlow = ai.defineFlow(
     outputSchema: GeneratedMenuOutputSchema,
   },
   async (input) => {
-    console.log('Génération de menu pour:', input.userInput);
-    
     try {
       const { output } = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
-        system: input.systemPrompt || 'Tu es un chef cuisinier expert. Ta mission est de créer des menus équilibrés et appétissants. Réponds TOUJOURS en respectant strictement le format JSON demandé.',
-        prompt: `Crée un menu complet (plusieurs recettes comme entrée, plat, dessert) basé sur cette demande : "${input.userInput}". 
+        system: input.systemPrompt || 'Tu es un chef cuisinier expert. Ta mission est de créer des menus équilibrés et appétissants. Tu dois TOUJOURS répondre en FRANÇAIS. Réponds TOUJOURS en respectant strictement le format JSON demandé.',
+        prompt: `Crée un menu complet en FRANÇAIS (plusieurs recettes comme entrée, plat, dessert) basé sur cette demande : "${input.userInput}". 
         Pour chaque recette, fournis tous les détails : titre, description, catégorie, temps, ingrédients et étapes.`,
         output: { schema: MenuSchema },
       });
@@ -37,7 +35,6 @@ export const generateMenuFlow = ai.defineFlow(
         throw new Error('L\'IA a retourné un résultat vide.');
       }
 
-      console.log('Menu généré avec succès:', output.title);
       return output;
     } catch (error) {
       console.error('Erreur détaillée Genkit:', error);

@@ -151,11 +151,11 @@ export function RecipeForm({ initialData }: RecipeFormProps) {
     if (isEditMode && (initialData as Recipe).id) {
       updateRecipe({ ...data, id: (initialData as Recipe).id });
       toast({ title: "Recette modifiée!", description: "La recette a été mise à jour avec succès." });
-      router.push(`/recipes/${(initialData as Recipe).id}`);
+      router.push(`/recettes/${(initialData as Recipe).id}`);
     } else {
       const newRecipe = addRecipe(data);
       toast({ title: "Recette ajoutée!", description: "Votre nouvelle recette est prête." });
-      router.push(`/recipes/${newRecipe.id}`);
+      router.push(`/recettes/${newRecipe.id}`);
     }
   }
 

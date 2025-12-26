@@ -7,18 +7,17 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { RecipeSchema, IngredientSchema } from '@/lib/ai-schema';
+import { RecipeSchema } from '@/lib/ai-schema';
 
 // Define input schemas
 const GeneratePlanningInputSchema = z.object({
     recipes: z.array(RecipeSchema.pick({ id: true, title: true, category: true, description: true })),
     duration: z.coerce.number().int().positive().describe("The number of days to plan for."),
-    constraints: z.string().describe("User's constraints and preferences for the meal plan (e.g., 'vegetarian', 'quick meals', 'fish only')."),
+    constraints: z.string().describe("User's constraints and preferences for the meal plan."),
 });
 export type GeneratePlanningInput = z.infer<typeof GeneratePlanningInputSchema>;
 
 // Schema pour une recette complète générée à la volée (sans ID)
-// On ne met PAS .partial() ici pour forcer l'IA à remplir tous les champs
 const GeneratedRecipeDetailSchema = z.object({
   title: z.string().describe('Clean title, no disclaimers.'),
   description: z.string().describe('Short description.'),
@@ -35,14 +34,14 @@ const PlannedMealSchema = z.object({
     isNew: z.boolean().describe("Set to true if this is a newly generated recipe NOT in the provided list."),
     newRecipeDetails: GeneratedRecipeDetailSchema.optional().describe("Complete details of the new recipe. Required ONLY if isNew is true."),
     
-    day: z.number().int().min(1).describe("The day number in the plan (e.g., 1 for Day 1)."),
+    day: z.number().int().min(1).describe("The day number in the plan (1 to duration)."),
     meal: z.enum(['Midi', 'Soir']).describe("The meal slot, either 'Midi' (Lunch) or 'Soir' (Dinner)."),
     mealType: z.enum(['Entrée', 'Plat Principal', 'Dessert']).describe("The type of meal."),
 });
 
 const GeneratePlanningOutputSchema = z.object({
-    eventName: z.string().describe("A descriptive name for the generated event."),
-    meals: z.array(PlannedMealSchema).describe("The list of planned meals."),
+    eventName: z.string().describe("A descriptive name for the generated event (e.g., 'Semaine Végétarienne')."),
+    meals: z.array(PlannedMealSchema).describe("The list of planned meals. MUST cover all days from 1 to duration."),
 });
 export type GeneratePlanningOutput = z.infer<typeof GeneratePlanningOutputSchema>;
 
@@ -59,20 +58,21 @@ const generatePlanningFlow = ai.defineFlow(
     try {
       const { output } = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
-        system: `You are an expert meal planner. Your task is to create a balanced meal plan.
+        system: `Tu es un expert en planification de repas. Ta mission est de créer un planning équilibré, logique et varié.
+        Tu dois TOUJOURS répondre en FRANÇAIS, y compris pour les titres et descriptions des nouvelles recettes.
+
+        RÈGLES CRITIQUES :
+        1. **COUVERTURE :** Tu DOIS générer des repas pour CHAQUE jour du Jour 1 au Jour ${duration}.
+        2. **STRUCTURE :** Chaque jour DOIT avoir au moins un 'Plat Principal' pour le 'Midi' ET le 'Soir'.
+        3. **LOGIQUE :** Évite de répéter le même plat principal. Varie les plaisirs.
+        4. **RECETTES :** 
+           - Utilise en priorité les recettes de la liste 'Available Recipes' si elles correspondent aux contraintes : "${constraints}".
+           - Si tu dois créer une recette (isNew: true), fais-le en FRANÇAIS avec tous les détails (newRecipeDetails).
+        5. **CONTRAINTES :** Respecte strictement les envies : "${constraints}".
+        `,
+        prompt: `Recettes disponibles : ${availableRecipesJson}
         
-        CRITICAL RULES:
-        1. Only use recipes from the list IF they match the constraints: "${constraints}".
-        2. If you need a recipe that isn't in the list, set 'isNew: true' and provide FULL 'newRecipeDetails'.
-        3. DO NOT include meta-talk, instructions, or disclaimers like "[NEW RECIPE]" or "Generated because..." in the title or description.
-        4. The title must be ONLY the name of the dish.
-        5. 'newRecipeDetails' MUST contain non-empty ingredients and steps if 'isNew' is true.
-        
-        Duration: ${duration} days.
-        Constraints: ${constraints}`,
-        prompt: `Available Recipes: ${availableRecipesJson}
-        
-        Generate the meal plan now.`,
+        Génère maintenant le planning complet de ${duration} jours en FRANÇAIS.`,
         output: { schema: GeneratePlanningOutputSchema },
       });
 
@@ -90,6 +90,6 @@ const generatePlanningFlow = ai.defineFlow(
 
 
 // Exported function to be called from the client
-export async function generatePlanning(input: GeneratePlanningInput): Promise<GeneratedMealOutput> {
+export async function generatePlanning(input: GeneratePlanningInput): Promise<GeneratePlanningOutput> {
   return await generatePlanningFlow(input);
 }
