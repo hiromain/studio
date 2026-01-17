@@ -5,27 +5,33 @@
 @layer base {
   :root {
     /* Light Mode - Warm & Clean */
-    --background: 40 30% 98%; /* Crème très léger */
-    --foreground: 20 10% 15%; /* Gris-brun profond */
-    
-    --card: 0 0% 100%; 
+    --background: 40 30% 98%;
+    /* Crème très léger */
+    --foreground: 20 10% 15%;
+    /* Gris-brun profond */
+
+    --card: 0 0% 100%;
     --card-foreground: 20 10% 15%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 20 10% 15%;
-    
-    --primary: 142 76% 36%; /* Vert Frais (Modification Utilisateur) */
+
+    --primary: 25 85% 55%;
+    /* Orange Brûlé */
     --primary-foreground: 0 0% 100%;
-    
-    --secondary: 70 20% 90%; /* Vert Olive très clair pour le fond */
-    --secondary-foreground: 70 50% 20%; /* Vert Olive foncé */
-    
+
+    --secondary: 70 20% 90%;
+    /* Vert Olive très clair pour le fond */
+    --secondary-foreground: 70 50% 20%;
+    /* Vert Olive foncé */
+
     --muted: 40 20% 92%;
     --muted-foreground: 20 5% 45%;
-    
-    --accent: 70 40% 40%; /* Vert Olive (Accent) */
+
+    --accent: 70 40% 40%;
+    /* Vert Olive (Accent) */
     --accent-foreground: 0 0% 100%;
-    
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
@@ -33,7 +39,8 @@
     --input: 40 20% 90%;
     --ring: 25 85% 55%;
 
-    --radius: 1rem; /* Plus arrondi pour un aspect "organique" */
+    --radius: 1rem;
+    /* Plus arrondi pour un aspect "organique" */
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -58,19 +65,38 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
-  h1, h2, h3, h4, h5, h6 {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply font-serif;
   }
 }
 
 /* Animations personnalisées */
-.animate-stagger > * {
+.animate-stagger>* {
   --stagger-delay: 100ms;
 }
-.animate-stagger > *:nth-child(1) { animation-delay: calc(var(--stagger-delay) * 1); }
-.animate-stagger > *:nth-child(2) { animation-delay: calc(var(--stagger-delay) * 2); }
-.animate-stagger > *:nth-child(3) { animation-delay: calc(var(--stagger-delay) * 3); }
-.animate-stagger > *:nth-child(4) { animation-delay: calc(var(--stagger-delay) * 4); }
+
+.animate-stagger>*:nth-child(1) {
+  animation-delay: calc(var(--stagger-delay) * 1);
+}
+
+.animate-stagger>*:nth-child(2) {
+  animation-delay: calc(var(--stagger-delay) * 2);
+}
+
+.animate-stagger>*:nth-child(3) {
+  animation-delay: calc(var(--stagger-delay) * 3);
+}
+
+.animate-stagger>*:nth-child(4) {
+  animation-delay: calc(var(--stagger-delay) * 4);
+}
